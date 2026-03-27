@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notarized Contract Library</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --brand-primary: #556ee6;
+      --brand-secondary: #f4f5f8;
+      --text-main: #495057;
+      --text-muted: #74788d;
+      --border-soft: #eff2f7;
+    }
+
+    body { 
+      background-color: var(--brand-secondary); 
+      font-family: 'Poppins', sans-serif; 
+      color: var(--text-main);
+    }
+    
+    #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease-out; }
+    #splash-screen img { max-width: 300px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    
+    .navbar { background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,.04); border-bottom: 1px solid var(--border-soft); }
+    .navbar-brand { font-weight: 600; color: #1a233a !important; font-size: 1.1rem; }
+    .navbar-brand img { height: 35px; margin-right: 15px; }
+
+    .search-section-wrapper { position: relative; z-index: 10; }
+    .search-section { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0.75rem 1.5rem rgba(18,38,63,.03); border: 1px solid var(--border-soft); }
+    
+    .folder-wrapper { position: relative; width: 100%; margin-bottom: 3.5rem; perspective: 1500px; }
+    .folder-back-cover { position: absolute; top: -10px; left: 5px; right: 5px; height: 60px; background: #e4e7ea; border-radius: 12px 12px 0 0; z-index: 1; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid #d1d6dc; }
+    .folder-tab { position: absolute; top: -30px; left: 30px; background: #e4e7ea; padding: 6px 30px 15px 30px; border-radius: 12px 12px 0 0; color: #495057; font-weight: 600; font-size: 0.8rem; z-index: 1; border: 1px solid #d1d6dc; border-bottom: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 5px 10px rgba(255,255,255,0.5); }
+
+    .folder-wrapper:hover .folder-back-cover { top: -20px; background: #dfe3e8; }
+    .folder-wrapper:hover .folder-tab { top: -45px; background: #dfe3e8; color: var(--brand-primary); }
+
+    .folder-front-cover { position: relative; z-index: 5; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 25px rgba(18,38,63,.06); border-left: 6px solid var(--brand-primary); padding: 25px 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .folder-wrapper:hover .folder-front-cover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(18,38,63,.1); }
+    
+    .folder-wrapper.is-open .folder-front-cover { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: 0 5px 15px rgba(18,38,63,.04); transform: translateY(0); }
+    .folder-wrapper.is-open .folder-tab, .folder-wrapper.is-open .folder-back-cover { transform: translateY(5px); opacity: 0.5; }
+
+    .folder-content-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s cubic-bezier(0.19, 1, 0.22, 1); background: #f8f9fa; border-radius: 0 0 12px 12px; margin: 0 15px; position: relative; z-index: 4; border: 1px solid #eef0f3; border-top: none; box-shadow: inset 0 10px 15px rgba(0,0,0,0.02); }
+    .folder-content-wrapper.is-open { grid-template-rows: 1fr; }
+    .folder-content-inner { overflow: hidden; }
+
+    .mc-data-title { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .mc-data-value { font-size: 0.95rem; font-weight: 600; color: #1a233a; }
+    
+    .sub-card { border: 1px solid var(--border-soft); border-radius: 10px; background: #ffffff; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+    .sub-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    .sub-info-label { font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;}
+    .sub-info-value { font-size: 0.8rem; font-weight: 500; margin-bottom: 10px; color: var(--text-main); line-height: 1.3; }
+
+    .badge-status { font-size: 0.75rem; padding: 0.45em 0.85em; font-weight: 600; letter-spacing: 0.3px; white-space: normal; text-align: center; line-height: 1.3; display: inline-block; }
+    .badge-live { background-color: rgba(52, 195, 143, 0.15); color: #2ca07a; border: 1px solid rgba(52, 195, 143, 0.3); }
+    .badge-expiring { background-color: rgba(241, 180, 76, 0.15); color: #d49a3a; border: 1px solid rgba(241, 180, 76, 0.3); }
+    .badge-expired { background-color: rgba(244, 106, 106, 0.15); color: #e35454; border: 1px solid rgba(244, 106, 106, 0.3); }
+    .badge-ongoing { background-color: rgba(85, 110, 230, 0.15); color: var(--brand-primary); border: 1px solid rgba(85, 110, 230, 0.3); }
+    .badge-neutral { background-color: #f4f5f8; color: var(--text-muted); border: 1px solid var(--border-soft); }
+
+    .btn-brand { background-color: var(--brand-primary); color: white; font-weight: 500; border-radius: 6px; }
+    .btn-brand:hover { background-color: #4458b8; color: white; }
+    
+    .modern-tabs { display: flex; gap: 1.5rem; border-bottom: 1px solid var(--border-soft); margin-bottom: 2.5rem; padding-left: 0; padding-bottom: 5px; margin-top: 1rem; flex-wrap: wrap; position: relative; z-index: 999; }
+    .modern-tabs::-webkit-scrollbar { height: 4px; }
+    .modern-tabs::-webkit-scrollbar-thumb { background-color: var(--border-soft); border-radius: 4px; }
+    .modern-tab-item { list-style: none; }
+    .modern-tab-link { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 0.2rem; color: var(--text-muted); font-weight: 500; font-size: 0.95rem; text-decoration: none; border-bottom: 3px solid transparent; transition: all 0.2s ease; position: relative; bottom: -1px; }
+    .modern-tab-link:hover { color: var(--brand-primary); }
+    .modern-tab-link.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); font-weight: 600; }
+    .tab-badge { font-size: 0.75rem; padding: 0.25em 0.6em; border-radius: 20px; background-color: var(--border-soft); color: var(--text-muted); font-weight: 600; }
+    .modern-tab-link.active .tab-badge { background-color: rgba(85, 110, 230, 0.1); color: var(--brand-primary); }
+
+    .modern-tab-link::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px); background-color: #1a233a; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 400; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s ease; z-index: 1050; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .modern-tab-link::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px); border-width: 5px; border-style: solid; border-color: #1a233a transparent transparent transparent; opacity: 0; visibility: hidden; transition: all 0.2s ease; z-index: 1050; pointer-events: none; }
+    .modern-tab-link:hover::after, .modern-tab-link:hover::before { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-5px); }
+
+    .analytics-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(18, 38, 63, 0.6); backdrop-filter: blur(4px); z-index: 1100; overflow-y: auto; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+    .analytics-modal-overlay.show { opacity: 1; visibility: visible; }
+    .analytics-modal-content { background: var(--brand-secondary); margin: 3rem auto; max-width: 1400px; width: 95%; border-radius: 12px; padding: 2rem; box-shadow: 0 15px 50px rgba(0,0,0,0.2); position: relative; transform: translateY(-20px); transition: all 0.3s ease; }
+    .analytics-modal-overlay.show .analytics-modal-content { transform: translateY(0); }
+    .btn-close-modal { position: absolute; top: 20px; right: 20px; background: white; border: none; font-size: 1.2rem; color: var(--text-muted); border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; z-index: 20;}
+    .btn-close-modal:hover { color: #f46a6a; transform: scale(1.1); }
+
+    .fab-search-btn { position: fixed; bottom: 30px; right: 30px; width: 55px; height: 55px; border-radius: 50%; background-color: white; color: var(--text-muted); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; z-index: 1050; border: 1px solid var(--border-soft); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; visibility: hidden; transform: translateY(20px); }
+    .fab-search-btn.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .fab-search-btn:hover { background-color: #f8f9fa; transform: translateY(-5px) scale(1.05); color: var(--brand-primary); }
+
+    .fab-analytics-btn { position: fixed; bottom: 95px; right: 30px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #556ee6 0%, #3b4cb8 100%); color: white; box-shadow: 0 4px 15px rgba(85, 110, 230, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; z-index: 1050; border: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; visibility: hidden; transform: translateY(20px); animation: subtlePulse 2s infinite; }
+    .fab-analytics-btn.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .fab-analytics-btn:hover { background-color: #4458b8; transform: translateY(-5px) scale(1.05); box-shadow: 0 6px 20px rgba(85, 110, 230, 0.6); }
+
+    .floating-search-panel { position: fixed; bottom: 30px; right: 100px; width: 320px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); border: 1px solid var(--border-soft); z-index: 1049; opacity: 0; visibility: hidden; transform: translateX(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: center right; }
+    .floating-search-panel.show { opacity: 1; visibility: visible; transform: translateX(0) scale(1); }
+
+    .btn-analytics { background: linear-gradient(135deg, #556ee6 0%, #3b4cb8 100%); color: white !important; font-weight: 600; border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(85, 110, 230, 0.3); transition: all 0.3s ease; }
+    .btn-analytics:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(85, 110, 230, 0.5); }
+    @keyframes subtlePulse { 0% { box-shadow: 0 0 0 0 rgba(85, 110, 230, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(85, 110, 230, 0); } 100% { box-shadow: 0 0 0 0 rgba(85, 110, 230, 0); } }
+    .chart-container { position: relative; height: 380px; width: 100%; }
+
+    [v-cloak] { display: none; }
+
+    .fab-chat-btn { position: fixed; bottom: 160px; right: 30px; width: 55px; height: 55px; border-radius: 50%; background-color: #20c997; color: white; box-shadow: 0 4px 15px rgba(32, 201, 151, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; z-index: 1050; border: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; visibility: hidden; transform: translateY(20px); }
+    .fab-chat-btn.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .fab-chat-btn:hover { background-color: #1ba87e; transform: translateY(-5px) scale(1.05); }
+
+    .chat-window { position: fixed; bottom: 95px; right: 100px; width: 350px; height: 450px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid var(--border-soft); z-index: 1060; display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95); transition: all 0.3s ease; transform-origin: bottom right; }
+    .chat-window.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+    
+    .chat-header { background: #20c997; color: white; padding: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .chat-header button { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+    .chat-body { flex-grow: 1; padding: 15px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
+    .chat-message { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 0.85rem; line-height: 1.4; }
+    .chat-message.user { background: var(--brand-primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .chat-message.bot { background: #e4e7ea; color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 2px; }
+    
+    .chat-footer { padding: 10px; border-top: 1px solid var(--border-soft); background: white; display: flex; gap: 8px; }
+    .chat-footer input { flex-grow: 1; border: 1px solid var(--border-soft); border-radius: 20px; padding: 8px 15px; outline: none; font-size: 0.85rem; }
+    .chat-footer input:focus { border-color: #20c997; }
+    .chat-footer button { background: #20c997; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+    .chat-footer button:hover { background: #1ba87e; }
+    .chat-loading { align-self: flex-start; color: var(--text-muted); font-size: 0.8rem; font-style: italic; display: flex; gap: 4px; align-items: center; }
+    .dot-flashing { width: 4px; height: 4px; border-radius: 2px; background-color: var(--text-muted); animation: dot-flashing 1s infinite linear alternate; animation-delay: 0.5s; }
+    .dot-flashing::before, .dot-flashing::after { content: ''; display: inline-block; position: absolute; top: 0; width: 4px; height: 4px; border-radius: 2px; background-color: var(--text-muted); animation: dot-flashing 1s infinite alternate; }
+    .dot-flashing::before { left: -8px; animation-delay: 0s; }
+    .dot-flashing::after { left: 8px; animation-delay: 1s; }
+    @keyframes dot-flashing { 0% { background-color: var(--text-muted); } 50%, 100% { background-color: transparent; } }
+
+    .summary-cards-row { margin-bottom: 2rem; }
+    .summary-card { background: #ffffff; border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-soft); box-shadow: 0 4px 12px rgba(18,38,63,.03); transition: all 0.3s ease; display: flex; align-items: center; gap: 1rem; }
+    .summary-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(18,38,63,.06); }
+    .summary-icon-box { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+    .summary-details { flex-grow: 1; }
+    .summary-title { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .summary-value { font-size: 1.5rem; font-weight: 700; color: #1a233a; line-height: 1.2; }
+    .border-left-contracts { border-left: 6px solid var(--brand-primary) !important;}
+    .border-left-headcount { border-left: 6px solid #2ca07a !important; }
+    .border-left-properties { border-left: 6px solid #d49a3a !important; }
+    .border-left-providers { border-left: 6px solid #50a5f1 !important; }
+    
+    .icon-box-contracts { background-color: rgba(85, 110, 230, 0.1); color: var(--brand-primary); }
+    .icon-box-headcount { background-color: rgba(52, 195, 143, 0.1); color: #2ca07a; }
+    .icon-box-properties { background-color: rgba(241, 180, 76, 0.1); color: #d49a3a; }
+    .icon-box-providers { background-color: rgba(80, 165, 241, 0.1); color: #50a5f1; }
+
+    @media (max-width: 768px) {
+      .navbar-brand { font-size: 1rem; }
+      .navbar-brand img { height: 28px; margin-right: 10px; }
+      .header-subtitle { display: block; margin-left: 0 !important; margin-top: 2px; }
+      .modern-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .modern-tab-link { font-size: 0.8rem; padding: 0.6rem 0.1rem; }
+      .modern-tab-link::after, .modern-tab-link::before { display: none !important; }
+      .bottom-controls { flex-direction: column-reverse; gap: 15px; text-align: center; }
+      .bottom-controls nav { width: 100%; display: flex; justify-content: center; }
+      .floating-search-panel { width: calc(100% - 60px); right: 30px; bottom: 95px; transform-origin: bottom right; transform: translateY(20px) scale(0.95); }
+      .floating-search-panel.show { transform: translateY(0) scale(1); }
+      .chat-window { width: calc(100% - 60px); right: 30px; bottom: 95px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app" v-cloak>
+    
+    <div id="splash-screen" v-if="showSplash">
+      <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Company Logo">
+      <div class="spinner-border text-primary mt-4" role="status" v-if="isLoadingData" style="color: var(--brand-primary) !important;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div v-show="!showSplash">
+      
+      <nav class="navbar px-4 sticky-top">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Logo">
+          <div>
+            MSP Contract Library 
+            <span class="text-muted ms-2" style="font-size: 0.8rem; font-weight: 400;">| Advanced Group Archive</span>
+          </div>
+        </a>
+      </nav>
+
+      <div class="container-fluid px-5 mt-4">
+
+        <div class="row mb-3 search-section-wrapper">
+          <div class="col-12">
+            <div class="search-section">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="mc-data-title">Filter by Property</label>
+                  <select class="form-select" v-model="selectedProperty">
+                    <option value="">All Properties / Townships</option>
+                    <option v-for="prop in uniqueProperties" :key="prop" :value="prop">{{ prop }}</option>
+                  </select>
+                </div>
+                <div class="col-md-7">
+                  <label class="mc-data-title">Global Search</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" v-model="searchQuery" placeholder="Search Payor, Provider, Group ID, Ref #...">
+                  </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button class="btn btn-light w-100 text-muted border" @click="clearFilters">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <button class="btn btn-analytics px-4 py-2 w-100 d-flex justify-content-center align-items-center gap-2" @click="toggleAnalyticsModal">
+                    <i class="bi bi-bar-chart-fill"></i> View Analytics Dashboard
+                </button>
+            </div>
+        </div>
+
+        <ul class="modern-tabs">
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Contracts currently active" :class="{ active: activeTab === 'Live' }" @click.prevent="selectTab('Live')">
+              Live <span class="tab-badge">{{ getTabCount('Live') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Contracts expiring soon" :class="{ active: activeTab === 'Expiring' }" @click.prevent="selectTab('Expiring')">
+              Expiring <span class="tab-badge">{{ getTabCount('Expiring') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Contracts that have passed their end date" :class="{ active: activeTab === 'Expired' }" @click.prevent="selectTab('Expired')">
+              Expired <span class="tab-badge">{{ getTabCount('Expired') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Currently active temporary augmentations" :class="{ active: activeTab === 'Ongoing Augmentation' }" @click.prevent="selectTab('Ongoing Augmentation')">
+              Ongoing Augmentation <span class="tab-badge">{{ getTabCount('Ongoing Augmentation') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Completed temporary augmentations" :class="{ active: activeTab === 'Done Augmentation' }" @click.prevent="selectTab('Done Augmentation')">
+              Done Augmentation <span class="tab-badge">{{ getTabCount('Done Augmentation') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Other contract statuses (e.g., Closed, Changed)" :class="{ active: activeTab === 'Others' }" @click.prevent="selectTab('Others')">
+              Others <span class="tab-badge">{{ getTabCount('Others') }}</span>
+            </a>
+          </li>
+        </ul>
+
+        <div v-if="!isLoadingData && paginatedGroups.length === 0" class="text-center py-5 search-section mb-5">
+          <i class="bi bi-folder-x text-muted" style="font-size: 3.5rem;"></i>
+          <h4 class="mt-3 text-dark fw-semibold">No Contract Groups Found</h4>
+          <p class="text-muted">Try adjusting your search criteria.</p>
+        </div>
+
+        <div class="folder-wrapper" :class="{'is-open': isGroupOpen(group.id)}" v-for="(group, gIndex) in paginatedGroups" :key="group.id">
+          
+          <div class="folder-back-cover" v-if="group.subs.length > 0"></div>
+          <div class="folder-tab" v-if="group.subs.length > 0">
+             <i class="bi bi-folder2-open me-1"></i> {{ group.subs.length }} Linked Document(s) inside
+          </div>
+
+          <div class="folder-front-cover" @click="toggleGroup(group.id)">
+             <div class="row w-100 align-items-center m-0">
+                 
+                 <div class="col-2 border-end pe-3">
+                     <span :class="['badge rounded-pill badge-status mb-3', getCustomStatusClass(group.main.status)]">
+                         {{ group.main.status || 'UNKNOWN' }}
+                     </span>
+                     <div class="mc-data-title">Contract Group ID</div>
+                     <h5 class="mb-0 fw-bold text-dark">{{ group.id === 'Ungrouped' ? 'No Group Assigned' : group.id }}</h5>
+                 </div>
+                 
+                 <div class="col-3 border-end px-4">
+                     <h5 class="text-primary mb-1 fw-bold"><i class="bi bi-building me-2"></i>{{ group.main.property }}</h5>
+                     <div class="text-dark fw-bold mb-1" style="font-size: 0.95rem;">{{ group.main.kindOfSfc || 'No SFC Kind' }}</div>
+                     <div class="text-muted small"><i class="bi bi-hash"></i> {{ group.main.refNum }}</div>
+                 </div>
+
+                 <div class="col-3 border-end px-4">
+                      <div class="mb-3">
+                          <div class="mc-data-title">Provider</div>
+                          <div class="mc-data-value">{{ group.main.supplier || '-' }}</div>
+                      </div>
+                      <div>
+                          <div class="mc-data-title">Payor</div>
+                          <div class="text-muted fw-medium" style="font-size: 0.85rem;">{{ group.main.payor || '-' }}</div>
+                      </div>
+                 </div>
+
+                 <div class="col-2 px-4 border-end">
+                      <div class="mb-3">
+                        <div class="mc-data-title"><i class="bi bi-calendar-event me-1"></i> Contract Period</div>
+                        <div class="text-dark fw-bold mb-1" style="font-size: 0.85rem;">{{ group.main.startDate }}</div>
+                        <div class="text-muted" style="font-size: 0.8rem;">{{ group.main.endDate }}</div>
+                      </div>
+                      <div v-if="group.main.headcount">
+                        <span class="badge bg-light text-dark border"><i class="bi bi-people-fill me-1 text-muted"></i> HC: {{ group.main.headcount }}</span>
+                      </div>
+                 </div>
+
+                 <div class="col-2 ps-4 text-center">
+                      <div class="d-flex flex-column gap-2 mb-2" @click.stop>
+                          <a v-if="group.main.noaUrl" :href="group.main.noaUrl" target="_blank" class="btn btn-sm btn-outline-success fw-bold"><i class="bi bi-file-earmark-check me-1"></i> NOA</a>
+                          <a v-if="group.main.sfcUrl" :href="group.main.sfcUrl" target="_blank" class="btn btn-sm btn-brand fw-bold"><i class="bi bi-file-earmark-pdf me-1"></i> SFC</a>
+                          <a v-if="group.main.mlcUrl" :href="group.main.mlcUrl" target="_blank" class="btn btn-sm btn-outline-secondary fw-bold"><i class="bi bi-file-earmark-text me-1"></i> MLC</a>
+                      </div>
+                      
+                      <div v-if="group.subs.length > 0" class="mt-3">
+                          <i class="bi transition-all" :class="isGroupOpen(group.id) ? 'bi-chevron-up' : 'bi-chevron-down'" style="color: var(--brand-primary); font-size: 1.5rem; transition: transform 0.3s;"></i>
+                      </div>
+                      <div v-else class="mt-3 text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                          Stand-alone
+                      </div>
+                 </div>
+                 
+             </div>
+          </div>
+
+          <div class="folder-content-wrapper" :class="{'is-open': isGroupOpen(group.id)}" v-if="group.subs.length > 0">
+              <div class="folder-content-inner">
+                  <div class="p-4 pt-5">
+                      <h6 class="text-muted mb-4 text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        <i class="bi bi-files me-2"></i> Sub-Contracts & Rate Adjustment ({{ group.subs.length }})
+                      </h6>
+                      
+                      <div class="row g-4">
+                          <div class="col-4" v-for="(sub, sIndex) in group.subs" :key="sIndex">
+                              <div class="sub-card p-3 h-100 d-flex flex-column">
+                                  
+                                  <div class="d-flex flex-column gap-2 border-bottom pb-2 mb-3">
+                                      <span :class="['badge rounded-pill badge-status align-self-start', getCustomStatusClass(sub.status)]" style="font-size: 0.65rem;">
+                                          {{ sub.status || 'UNKNOWN' }}
+                                      </span>
+                                      <span class="text-primary fw-bold" style="font-size: 0.85rem; line-height: 1.3;">{{ sub.kindOfSfc || 'Doc' }}</span>
+                                  </div>
+                                  
+                                  <div class="flex-grow-1">
+                                      <div class="row mb-2">
+                                          <div class="col-7">
+                                              <div class="sub-info-label">Ref #</div>
+                                              <div class="sub-info-value"><i class="bi bi-hash text-muted"></i> {{ sub.refNum }}</div>
+                                          </div>
+                                          <div class="col-5">
+                                              <div class="sub-info-label">Headcount</div>
+                                              <div class="sub-info-value"><i class="bi bi-people text-muted"></i> {{ sub.headcount || '-' }}</div>
+                                          </div>
+                                      </div>
+                                      
+                                      <div class="mb-2">
+                                        <div class="sub-info-label">Provider</div>
+                                        <div class="sub-info-value">{{ sub.supplier || '-' }}</div>
+                                      </div>
+                                      <div class="mb-3">
+                                        <div class="sub-info-label">Kind of Service</div>
+                                        <div class="sub-info-value">{{ sub.kindOfService || '-' }}</div>
+                                      </div>
+
+                                      <div class="bg-light p-2 rounded mb-3 text-center">
+                                          <div class="sub-info-label mb-1">Period</div>
+                                          <div style="font-size: 0.7rem; font-weight: 600;">{{ sub.startDate }} &rarr; {{ sub.endDate }}</div>
+                                      </div>
+                                  </div>
+                                  
+                                  <div class="d-flex gap-2 border-top pt-3">
+                                      <a v-if="sub.noaUrl" :href="sub.noaUrl" target="_blank" class="btn btn-sm btn-outline-success flex-grow-1" style="font-size: 0.7rem; font-weight: 600;">NOA</a>
+                                      <a v-if="sub.sfcUrl" :href="sub.sfcUrl" target="_blank" class="btn btn-sm btn-outline-primary flex-grow-1" style="font-size: 0.7rem; font-weight: 600;">SFC</a>
+                                      <a v-if="sub.mlcUrl" :href="sub.mlcUrl" target="_blank" class="btn btn-sm btn-outline-secondary flex-grow-1" style="font-size: 0.7rem; font-weight: 600;">MLC</a>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center pb-5 mt-4 bottom-controls">
+          <div class="text-muted small fw-medium">
+              Showing <span class="text-dark fw-bold">{{ totalFilteredContractsCount }}</span> total contracts inside <span class="text-dark fw-bold">{{ filteredGroupsCount }}</span> folders
+          </div>
+          
+          <nav v-if="totalPages > 1" aria-label="Pagination">
+            <ul class="pagination shadow-sm mb-0">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <a class="page-link text-muted" href="#" @click.prevent="changePage(currentPage - 1)">
+                  <i class="bi bi-chevron-left"></i> Prev
+                </a>
+              </li>
+              <li class="page-item disabled bg-light">
+                <span class="page-link text-dark fw-bold px-4">Page {{ currentPage }} of {{ totalPages }}</span>
+              </li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <a class="page-link text-muted" href="#" @click.prevent="changePage(currentPage + 1)">
+                  Next <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <button class="fab-chat-btn" :class="{'show': showFab}" @click="toggleChat" title="Ask AI Assistant">
+          <i class="bi bi-robot"></i>
+        </button>
+
+        <button class="fab-analytics-btn" :class="{'show': showFab}" @click="toggleAnalyticsModal" title="Open Analytics">
+            <i class="bi bi-bar-chart-fill"></i>
+        </button>
+
+        <button class="fab-search-btn" :class="{'show': showFab}" @click="toggleFloatingSearch" title="Quick Search">
+            <i class="bi" :class="showFloatingSearch ? 'bi-x-lg' : 'bi-search'"></i>
+        </button>
+
+        <div class="chat-window" :class="{'show': isChatOpen}">
+          <div class="chat-header">
+            <span><i class="bi bi-robot me-2"></i> AI Assistant</span>
+            <button @click="toggleChat"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="chat-body" ref="chatBody">
+            <div class="chat-message bot">
+              Hello! I am your AI assistant. I can help you navigate this app or answer questions about the currently displayed contracts. How can I help?
+            </div>
+            <div v-for="(msg, index) in chatMessages" :key="index" class="chat-message" :class="msg.role">
+              {{ msg.text }}
+            </div>
+            <div class="chat-loading" v-if="isChatLoading">
+              <div class="ms-2 position-relative" style="width: 20px;">
+                <div class="dot-flashing"></div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-footer">
+            <input type="text" v-model="chatInput" @keyup.enter="sendMessage" placeholder="Ask about contracts...">
+            <button @click="sendMessage" :disabled="isChatLoading"><i class="bi bi-send-fill"></i></button>
+          </div>
+        </div>
+
+        <div class="floating-search-panel" :class="{'show': showFloatingSearch}">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-search me-2"></i>Quick Search</h6>
+            </div>
+            <div class="mb-3">
+                <label class="mc-data-title">Property</label>
+                <select class="form-select form-select-sm" v-model="selectedProperty">
+                    <option value="">All Properties</option>
+                    <option v-for="prop in uniqueProperties" :key="prop" :value="prop">{{ prop }}</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="mc-data-title">Global Search</label>
+                <input type="text" class="form-control form-control-sm" v-model="searchQuery" placeholder="Search Ref #, Provider...">
+            </div>
+            <button class="btn btn-sm btn-light w-100 text-muted border" @click="clearFloatingFilters">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filters
+            </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="analytics-modal-overlay" :class="{'show': showAnalyticsModal}">
+        <div class="analytics-modal-content">
+            <button class="btn-close-modal" @click="toggleAnalyticsModal"><i class="bi bi-x"></i></button>
+
+            <div class="row mb-4">
+              <div class="col-12">
+                  <h4 class="fw-bold text-dark mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i> Real-time Analytics</h4>
+                  <p class="text-muted small m-0">Data shown below is dynamically based on your current search and filters.</p>
+              </div>
+            </div>
+
+            <div class="row g-3 summary-cards-row">
+              <div class="col-6 col-md-3">
+                <div class="summary-card border-left-contracts">
+                  <div class="summary-icon-box icon-box-contracts"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="summary-details">
+                      <div class="summary-title">Total Contracts</div>
+                        <div class="summary-value">{{ totalContractsCount }}</div>
+                      </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="summary-card border-left-headcount">
+                    <div class="summary-icon-box icon-box-headcount"><i class="bi bi-people"></i></div>
+                    <div class="summary-details">
+                      <div class="summary-title">Total Headcount</div>
+                      <div class="summary-value">{{ totalHeadcountSum }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="summary-card border-left-properties">
+                    <div class="summary-icon-box icon-box-properties"><i class="bi bi-building"></i></div>
+                    <div class="summary-details">
+                      <div class="summary-title">Listed Properties</div>
+                      <div class="summary-value">{{ listedPropertiesCount }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="summary-card border-left-providers">
+                    <div class="summary-icon-box icon-box-providers"><i class="bi bi-person-workspace"></i></div>
+                    <div class="summary-details">
+                      <div class="summary-title">Active Providers</div>
+                      <div class="summary-value">{{ activeProvidersCount }}</div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Contract Status Breakdown</h6>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">{{ isFiltered ? 'Headcount per Property' : 'Top 10 Properties by Headcount' }}</h6>
+                        <div class="chart-container">
+                            <canvas id="hcPropertyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">{{ isFiltered ? 'Headcount by Agency / Provider' : 'Top 10 Agencies / Providers by Headcount' }}</h6>
+                        <div class="chart-container">
+                            <canvas id="hcProviderChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Total Headcount by Kind of Service</h6>
+                        <div class="chart-container">
+                            <canvas id="hcServiceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-12">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">{{ isFiltered ? 'Contract Volume per Property' : 'Top 15 Properties by Contract Volume' }}</h6>
+                        <div class="chart-container">
+                            <canvas id="contractVolChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const contracts = ref([]);
+        const showSplash = ref(true);
+        const isLoadingData = ref(true);
+        const error = ref(null);
+        
+        const showAnalyticsModal = ref(false);
+
+        const searchQuery = ref('');
+        const selectedProperty = ref('');
+        const activeTab = ref('Live'); 
+        
+        const currentPage = ref(1);
+        const itemsPerPage = 10; 
+
+        const showFab = ref(false);
+        const showFloatingSearch = ref(false);
+
+        const totalContractsCount = ref(0);
+        const totalHeadcountSum = ref(0);
+        const listedPropertiesCount = ref(0);
+        const activeProvidersCount = ref(0);
+
+        const isChatOpen = ref(false);
+        const chatInput = ref('');
+        const chatMessages = ref([]);
+        const isChatLoading = ref(false);
+        const chatBody = ref(null);
+
+        const MAIN_SFC_TYPES = ['ADD LC', 'ADD LOA', 'LAC', 'LC', 'LETTER OF APPOINTMENT', 'LETTER OF EXTENSION', 'LOE', 'LOA', 'PEA'];
+        const TABS_LIST = ['Live', 'Expiring', 'Expired', 'Ongoing Augmentation', 'Done Augmentation', 'Others'];
+
+        const expandedGroups = ref(new Set());
+        
+        const isFiltered = computed(() => searchQuery.value.trim() !== '' || selectedProperty.value !== '');
+
+        const toggleGroup = (groupId) => {
+            const group = paginatedGroups.value.find(g => g.id === groupId);
+            if(group && group.subs.length === 0) return;
+
+            const newSet = new Set(expandedGroups.value);
+            if (newSet.has(groupId)) {
+                newSet.delete(groupId);
+            } else {
+                newSet.add(groupId);
+            }
+            expandedGroups.value = newSet;
+        };
+        const isGroupOpen = (groupId) => expandedGroups.value.has(groupId);
+
+        const resetFolders = () => {
+            expandedGroups.value = new Set();
+        };
+
+        const selectTab = (tabName) => {
+            activeTab.value = tabName;
+            currentPage.value = 1;
+            resetFolders();
+        };
+
+        const handleScroll = () => {
+            showFab.value = window.scrollY > 250;
+            if (!showFab.value) {
+                showFloatingSearch.value = false;
+                isChatOpen.value = false; // Hide chat when scrolled to top
+            }
+        };
+
+        const toggleFloatingSearch = () => {
+            showFloatingSearch.value = !showFloatingSearch.value;
+            if (showFloatingSearch.value) isChatOpen.value = false; // Close chat if search opens
+        };
+
+        const toggleChat = () => {
+            isChatOpen.value = !isChatOpen.value;
+            if (isChatOpen.value) showFloatingSearch.value = false; // Close search if chat opens
+        };
+
+        const scrollToChatBottom = () => {
+            nextTick(() => {
+                if (chatBody.value) {
+                    chatBody.value.scrollTop = chatBody.value.scrollHeight;
+                }
+            });
+        };
+
+        const sendMessage = () => {
+            const text = chatInput.value.trim();
+            if (!text || isChatLoading.value) return;
+
+            chatMessages.value.push({ role: 'user', text: text });
+            chatInput.value = '';
+            isChatLoading.value = true;
+            scrollToChatBottom();
+
+            let totalHeadcount = 0;
+            let statusCounts = {};      // For Status Breakdown
+            let hcByProperty = {};     // For Headcount per Property
+            let hcByProvider = {};     // For Headcount per Agency
+            let hcByService = {};      // For Headcount per Service 
+            let volByProperty = {};    // For Contract Volume per Property 
+            let hcByPropertyAndService = {};
+            let hcByProviderAndService = {};
+
+            dashboardContracts.value.forEach(c => {
+                const cat = getTabCategory(c.status);
+                statusCounts[cat] = (statusCounts[cat] || 0) + 1;
+
+                const prop = c.property || 'Unknown Property';
+                volByProperty[prop] = (volByProperty[prop] || 0) + 1;
+
+                const hc = parseInt(c.headcount, 10) || 0;
+                totalHeadcount += hc;
+
+                if (hc > 0) {
+                    hcByProperty[prop] = (hcByProperty[prop] || 0) + hc;
+
+                    const prov = c.supplier || 'Unknown Provider';
+                    hcByProvider[prov] = (hcByProvider[prov] || 0) + hc;
+
+                    const svc = c.kindOfService || 'Unknown Service';
+                    hcByService[svc] = (hcByService[svc] || 0) + hc;
+
+                    if (!hcByPropertyAndService[prop]) {
+                        hcByPropertyAndService[prop] = {};
+                    }
+                    hcByPropertyAndService[prop][svc] = (hcByPropertyAndService[prop][svc] || 0) + hc;
+
+                    if (!hcByProviderAndService[prov]) {
+                        hcByProviderAndService[prov] = {};
+                    }
+                    hcByProviderAndService[prov][svc] = (hcByProviderAndService[prov][svc] || 0) + hc;
+                }
+            });
+
+            const accurateAnalytics = {
+                activeTab: activeTab.value,
+                totalContractsVisible: dashboardContracts.value.length,
+                totalHeadcountOverall: totalHeadcount,
+                activeFilters: {
+                    search: searchQuery.value || 'None',
+                    property: selectedProperty.value || 'All Properties'
+                },
+                statusBreakdown: statusCounts,            
+                headcountPerProperty: hcByProperty,      
+                headcountPerProvider: hcByProvider,      
+                headcountPerService: hcByService,
+                headcountPerPropertyAndService: hcByPropertyAndService,
+                headcountPerProviderAndService: hcByProviderAndService, 
+                contractVolumePerProperty: volByProperty 
+            };
+
+            const sampleContracts = filteredContracts.value.slice(0, 10).map(c => ({
+                prop: c.property, prov: c.supplier, stat: c.status, ref: c.refNum, period: `${c.startDate} to ${c.endDate}`
+            }));
+
+            const contextToSend = {
+                ANALYTICS_DATA: accurateAnalytics,
+                SAMPLE_DATA: sampleContracts
+            };
+
+            google.script.run
+                .withSuccessHandler((reply) => {
+                    chatMessages.value.push({ role: 'bot', text: reply });
+                    isChatLoading.value = false;
+                    scrollToChatBottom();
+                })
+                .withFailureHandler((err) => {
+                    chatMessages.value.push({ role: 'bot', text: 'Error connecting to server: ' + err.message });
+                    isChatLoading.value = false;
+                    scrollToChatBottom();
+                })
+                .askGeminiAssistant(text, JSON.stringify(contextToSend));
+        };
+
+        const loadData = () => {
+          google.script.run
+            .withSuccessHandler((response) => {
+              try {
+                const data = JSON.parse(response);
+                if (data.error) throw new Error(data.error);
+                contracts.value = data;
+              } catch (e) {
+                error.value = "Failed to parse data: " + e.message;
+              }
+              isLoadingData.value = false;
+              setTimeout(() => { showSplash.value = false; }, 1200);
+            })
+            .withFailureHandler((err) => {
+              error.value = "Connection error: " + err.message;
+              isLoadingData.value = false;
+              showSplash.value = false;
+            })
+            .getContractData();
+        };
+
+        onMounted(() => { 
+            loadData(); 
+            window.addEventListener('scroll', handleScroll);
+        });
+
+        onUnmounted(() => {
+            window.removeEventListener('scroll', handleScroll);
+            document.body.style.overflow = '';
+        });
+
+        const uniqueProperties = computed(() => {
+          const props = contracts.value.map(c => c.property).filter(p => p);
+          return [...new Set(props)].sort();
+        });
+
+        const getTabCategory = (statusStr) => {
+          if (!statusStr) return 'Others';
+          const s = statusStr.trim().toLowerCase();
+          
+          if (s === 'live') return 'Live';
+          if (s === 'expiring') return 'Expiring';
+          if (s === 'expired') return 'Expired';
+          if (s === 'ongoing temporary augmentation') return 'Ongoing Augmentation';
+          if (s === 'done temporary augmentation') return 'Done Augmentation';
+          return 'Others';
+        };
+
+        const getTabCount = (tabName) => {
+          let baseFilter = contracts.value;
+          
+          if (selectedProperty.value) {
+              baseFilter = baseFilter.filter(c => c.property === selectedProperty.value);
+          }
+          if (searchQuery.value) {
+            const q = searchQuery.value.toLowerCase();
+            baseFilter = baseFilter.filter(c => 
+              (c.property && c.property.toLowerCase().includes(q)) ||
+              (c.payor && c.payor.toLowerCase().includes(q)) ||
+              (c.supplier && c.supplier.toLowerCase().includes(q)) ||
+              (c.kindOfSfc && c.kindOfSfc.toLowerCase().includes(q)) ||
+              (c.refNum && c.refNum.toLowerCase().includes(q)) ||
+              (c.contractGrpId && c.contractGrpId.toLowerCase().includes(q))
+            );
+          }
+          
+          baseFilter = baseFilter.filter(c => getTabCategory(c.status) === tabName);
+
+          const uniqueGroups = new Set();
+          baseFilter.forEach(c => {
+              uniqueGroups.add(c.contractGrpId ? c.contractGrpId.trim() : 'Ungrouped');
+          });
+
+          return uniqueGroups.size;
+        };
+
+        watch([searchQuery, selectedProperty], () => {
+            currentPage.value = 1;
+            expandedGroups.value.clear();
+
+            if (!showAnalyticsModal.value && getTabCount(activeTab.value) === 0) {
+                for (const tab of TABS_LIST) {
+                    if (getTabCount(tab) > 0) {
+                        activeTab.value = tab;
+                        break;
+                    }
+                }
+            }
+
+            if (showAnalyticsModal.value) {
+                nextTick(() => { renderCharts(); });
+            }
+        });
+
+        const dashboardContracts = computed(() => {
+          let result = contracts.value;
+          if (selectedProperty.value) {
+            result = result.filter(c => c.property === selectedProperty.value);
+          }
+          if (searchQuery.value) {
+            const query = searchQuery.value.toLowerCase();
+            result = result.filter(c => 
+              (c.property && c.property.toLowerCase().includes(query)) ||
+              (c.payor && c.payor.toLowerCase().includes(query)) ||
+              (c.supplier && c.supplier.toLowerCase().includes(query)) ||
+              (c.kindOfSfc && c.kindOfSfc.toLowerCase().includes(query)) ||
+              (c.refNum && c.refNum.toLowerCase().includes(query)) ||
+              (c.contractGrpId && c.contractGrpId.toLowerCase().includes(query))
+            );
+          }
+          return result;
+        });
+
+        const filteredContracts = computed(() => {
+          return dashboardContracts.value.filter(c => getTabCategory(c.status) === activeTab.value);
+        });
+
+        const groupedFilteredContracts = computed(() => {
+          const groupsMap = {};
+          
+          filteredContracts.value.forEach(c => {
+            const gId = c.contractGrpId || 'Ungrouped';
+            if (!groupsMap[gId]) {
+                groupsMap[gId] = { id: gId, main: null, subs: [] };
+            }
+            
+            const sfcKind = (c.kindOfSfc || '').toUpperCase().trim();
+            
+            if (MAIN_SFC_TYPES.includes(sfcKind)) {
+                if (!groupsMap[gId].main) {
+                    groupsMap[gId].main = c;
+                } else {
+                    groupsMap[gId].subs.push(c);
+                }
+            } else {
+                groupsMap[gId].subs.push(c);
+            }
+          });
+
+          return Object.values(groupsMap).map(g => {
+            if (!g.main && g.subs.length > 0) {
+                g.main = g.subs.shift(); 
+            }
+            return g;
+          }).sort((a,b) => a.id.localeCompare(b.id));
+        });
+
+        const totalFilteredContractsCount = computed(() => filteredContracts.value.length);
+        const filteredGroupsCount = computed(() => groupedFilteredContracts.value.length);
+
+        const totalPages = computed(() => Math.ceil(groupedFilteredContracts.value.length / itemsPerPage) || 1);
+        
+        const paginatedGroups = computed(() => {
+          const start = (currentPage.value - 1) * itemsPerPage;
+          const end = start + itemsPerPage;
+          return groupedFilteredContracts.value.slice(start, end);
+        });
+
+        const changePage = (page) => {
+          if (page >= 1 && page <= totalPages.value) {
+            currentPage.value = page;
+            resetFolders();
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+          }
+        };
+
+        const clearFilters = () => {
+          searchQuery.value = '';
+          selectedProperty.value = '';
+          selectTab('Live');
+        };
+
+        const clearFloatingFilters = () => {
+          clearFilters();
+          showFloatingSearch.value = false;
+        };
+
+        const getCustomStatusClass = (status) => {
+          if (!status) return 'badge-neutral';
+          const s = status.toLowerCase();
+          if (s.includes('live') || s.includes('done temporary augmentation')) return 'badge-live';
+          if (s.includes('expiring')) return 'badge-expiring';
+          if (s.includes('ongoing temporary augmentation')) return 'badge-ongoing';
+          if (s.includes('expired') || s.includes('disapproved')) return 'badge-expired';
+          return 'badge-neutral';
+        };
+
+        let charts = {};
+
+        const toggleAnalyticsModal = () => {
+            showAnalyticsModal.value = !showAnalyticsModal.value;
+            if (showAnalyticsModal.value) {
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                nextTick(() => { renderCharts(); });
+            } else {
+                document.body.style.overflow = '';
+            }
+        };
+
+        const renderCharts = () => {
+            const statusCounts = {};
+            const hcProp = {};
+            const hcProv = {};
+            const hcSvc = {};
+            const volProp = {};
+
+            totalHeadcountSum.value = 0;
+            const propsSet = new Set();
+            const provsSet = new Set();
+
+            dashboardContracts.value.forEach(c => {
+                const cat = getTabCategory(c.status);
+                statusCounts[cat] = (statusCounts[cat] || 0) + 1;
+
+                const prop = c.property || 'Unknown Property';
+                volProp[prop] = (volProp[prop] || 0) + 1;
+
+                const hc = parseInt(c.headcount, 10) || 0;
+                
+                if (hc > 0) {
+                    totalHeadcountSum.value += hc; 
+                    
+                    hcProp[prop] = (hcProp[prop] || 0) + hc;
+                    const prov = c.supplier || 'Unknown Provider';
+                    hcProv[prov] = (hcProv[prov] || 0) + hc;
+                    const svc = c.kindOfService || 'Unknown Service';
+                    hcSvc[svc] = (hcSvc[svc] || 0) + hc;
+                }
+
+                if (c.property) propsSet.add(c.property.trim());
+                if (c.supplier) provsSet.add(c.supplier.trim());
+            });
+
+            totalContractsCount.value = dashboardContracts.value.length;
+            listedPropertiesCount.value = propsSet.size;
+            activeProvidersCount.value = provsSet.size;
+
+            const statusColorMap = {
+                'Live': '#34c38f',                  // Green
+                'Expiring': '#f1b44c',              // Orange
+                'Expired': '#f46a6a',               // Red
+                'Ongoing Augmentation': '#556ee6',  // Blue
+                'Done Augmentation': '#20c997',     // Teal
+                'Others': '#74788d'                 // Gray
+            };
+
+            const buildChart = (id, type, labels, data, colorsSet, isHorizontal = false) => {
+                const ctx = document.getElementById(id);
+                if (!ctx) return;
+                if (charts[id]) charts[id].destroy();
+
+                charts[id] = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colorsSet,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: isHorizontal ? 'y' : 'x',
+                        plugins: { 
+                            legend: { display: type === 'doughnut' || type === 'pie', position: 'right' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) { label += ': '; }
+                                        let value = context.raw;
+                                        
+                                        let dataset = context.chart.data.datasets[context.datasetIndex];
+                                        let total = dataset.data.reduce((acc, val) => acc + val, 0);
+                                        let percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
+                                        
+                                        label += value + ' (' + percentage + ')';
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: (type === 'bar') ? {
+                            x: isHorizontal ? 
+                                { beginAtZero: true, ticks: { precision: 0 } } : 
+                                { ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 } },
+                            y: isHorizontal ? 
+                                { 
+                                    ticks: { 
+                                        autoSkip: false,
+                                        font: { 
+                                            size: window.innerWidth < 768 ? 9 : 10,
+                                            lineHeight: 1.1 
+                                        }, 
+                                        callback: function(value) {
+                                            const label = this.getLabelForValue(value);
+                                            if (!label) return label;
+                                            
+                                            if (label.length > 30) {
+                                                const words = label.split(' ');
+                                                const lines = [];
+                                                let currentLine = '';
+                                                words.forEach(word => {
+                                                    if ((currentLine + word).length > 30) {
+                                                        if (currentLine.trim()) lines.push(currentLine.trim());
+                                                        currentLine = word + ' ';
+                                                    } else {
+                                                        currentLine += word + ' ';
+                                                    }
+                                                });
+                                                if (currentLine.trim()) lines.push(currentLine.trim());
+                                                return lines;
+                                            }
+                                            return label;
+                                        }
+                                    } 
+                                } : 
+                                { beginAtZero: true, ticks: { precision: 0 } }
+                        } : {}
+                    }
+                });
+            };
+
+            const statusLabels = Object.keys(statusCounts);
+            const statusData = Object.values(statusCounts);
+            const statusColors = statusLabels.map(label => statusColorMap[label] || '#74788d');
+            
+            buildChart('statusChart', 'doughnut', statusLabels, statusData, statusColors);
+
+            const sliceAmount = isFiltered.value ? undefined : 10;
+            const sliceAmountVol = isFiltered.value ? undefined : 15;
+
+            let hcPropKeys = Object.keys(hcProp).sort((a,b) => hcProp[b] - hcProp[a]);
+            if(sliceAmount) hcPropKeys = hcPropKeys.slice(0, sliceAmount);
+            buildChart('hcPropertyChart', 'bar', hcPropKeys, hcPropKeys.map(k => hcProp[k]), '#556ee6');
+
+            let hcProvKeys = Object.keys(hcProv).sort((a,b) => hcProv[b] - hcProv[a]);
+            if(sliceAmount) hcProvKeys = hcProvKeys.slice(0, sliceAmount);
+            buildChart('hcProviderChart', 'bar', hcProvKeys, hcProvKeys.map(k => hcProv[k]), '#34c38f', true);
+
+            const brandColors = ['#556ee6', '#34c38f', '#f1b44c', '#f46a6a', '#50a5f1', '#74788d', '#e83e8c', '#20c997', '#ffbb44', '#e2e9ef'];
+            buildChart('hcServiceChart', 'pie', Object.keys(hcSvc), Object.values(hcSvc), brandColors);
+
+            let volPropKeys = Object.keys(volProp).sort((a,b) => volProp[b] - volProp[a]);
+            if(sliceAmountVol) volPropKeys = volPropKeys.slice(0, sliceAmountVol);
+            buildChart('contractVolChart', 'bar', volPropKeys, volPropKeys.map(k => volProp[k]), '#50a5f1');
+        };
+
+        return {
+          showSplash, isLoadingData, error, showAnalyticsModal, toggleAnalyticsModal,
+          searchQuery, selectedProperty, activeTab, isFiltered,
+          uniqueProperties, paginatedGroups, totalPages, currentPage, 
+          totalFilteredContractsCount, filteredGroupsCount,
+          isGroupOpen, toggleGroup, selectTab, resetFolders,
+          showFab, showFloatingSearch, toggleFloatingSearch, clearFloatingFilters,
+          changePage, getTabCount, clearFilters, getCustomStatusClass,
+          isChatOpen, chatInput, chatMessages, isChatLoading, toggleChat, sendMessage, chatBody,
+          totalContractsCount, totalHeadcountSum, listedPropertiesCount, activeProvidersCount
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
