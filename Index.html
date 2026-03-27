@@ -259,6 +259,11 @@
             </a>
           </li>
           <li class="modern-tab-item">
+            <a href="#" class="modern-tab-link" data-tooltip="Contracts currently being processed" :class="{ active: activeTab === 'On Process' }" @click.prevent="selectTab('On Process')">
+              On Process <span class="tab-badge">{{ getTabCount('On Process') }}</span>
+            </a>
+          </li>
+          <li class="modern-tab-item">
             <a href="#" class="modern-tab-link" data-tooltip="Other contract statuses (e.g., Closed, Changed)" :class="{ active: activeTab === 'Others' }" @click.prevent="selectTab('Others')">
               Others <span class="tab-badge">{{ getTabCount('Others') }}</span>
             </a>
@@ -282,12 +287,18 @@
              <div class="row w-100 align-items-center m-0">
                  
                  <div class="col-2 border-end pe-3">
-                     <span :class="['badge rounded-pill badge-status mb-3', getCustomStatusClass(group.main.status)]">
-                         {{ group.main.status || 'UNKNOWN' }}
-                     </span>
-                     <div class="mc-data-title">Contract Group ID</div>
-                     <h5 class="mb-0 fw-bold text-dark">{{ group.id === 'Ungrouped' ? 'No Group Assigned' : group.id }}</h5>
-                 </div>
+                      <span :class="['badge rounded-pill badge-status mb-3', getCustomStatusClass(group.main.status)]">
+                          {{ group.main.status || 'UNKNOWN' }}
+                      </span>
+                      <div class="mc-data-title">Contract Group ID</div>
+                      <h5 class="mb-0 fw-bold text-dark">{{ group.id === 'Ungrouped' ? 'No Group Assigned' : group.id }}</h5>
+
+                      <div v-if="activeTab === 'On Process' && (group.main.sfcBallWith || group.main.mlcBallWith)" class="mt-3 p-2 rounded" style="background-color: #f8f9fa; border: 1px dashed #ced4da;">
+                          <div class="mc-data-title text-primary mb-1" style="font-size: 0.6rem;"><i class="bi bi-person-lines-fill me-1"></i> Current Ball With:</div>
+                          <div v-if="group.main.sfcBallWith" class="text-dark fw-bold" style="font-size: 0.75rem;">SFC: <span class="text-muted fw-medium">{{ group.main.sfcBallWith }}</span></div>
+                          <div v-if="group.main.mlcBallWith" class="text-dark fw-bold mt-1" style="font-size: 0.75rem;">MLC: <span class="text-muted fw-medium">{{ group.main.mlcBallWith }}</span></div>
+                      </div>
+                  </div>
                  
                  <div class="col-3 border-end px-4">
                      <h5 class="text-primary mb-1 fw-bold"><i class="bi bi-building me-2"></i>{{ group.main.property }}</h5>
@@ -378,6 +389,12 @@
                                           <div class="sub-info-label mb-1">Period</div>
                                           <div style="font-size: 0.7rem; font-weight: 600;">{{ sub.startDate }} &rarr; {{ sub.endDate }}</div>
                                       </div>
+
+                                      <div v-if="activeTab === 'On Process' && (sub.sfcBallWith || sub.mlcBallWith)" class="p-2 rounded mb-3" style="background-color: #f8f9fa; border: 1px dashed #ced4da;">
+                                          <div class="sub-info-label text-primary mb-1"><i class="bi bi-person-lines-fill me-1"></i> Ball With:</div>
+                                          <div v-if="sub.sfcBallWith" class="text-dark fw-bold" style="font-size: 0.7rem;">SFC: <span class="text-muted fw-medium">{{ sub.sfcBallWith }}</span></div>
+                                          <div v-if="sub.mlcBallWith" class="text-dark fw-bold mt-1" style="font-size: 0.7rem;">MLC: <span class="text-muted fw-medium">{{ sub.mlcBallWith }}</span></div>
+                                      </div>
                                   </div>
                                   
                                   <div class="d-flex gap-2 border-top pt-3">
@@ -396,7 +413,7 @@
 
         <div class="d-flex justify-content-between align-items-center pb-5 mt-4 bottom-controls">
           <div class="text-muted small fw-medium">
-              Showing <span class="text-dark fw-bold">{{ totalFilteredContractsCount }}</span> total contracts inside <span class="text-dark fw-bold">{{ filteredGroupsCount }}</span> folders
+              Showing <span class="text-dark fw-bold">{{ totalFilteredContractsCount }}</span> total files inside <span class="text-dark fw-bold">{{ filteredGroupsCount }}</span> folders
           </div>
           
           <nav v-if="totalPages > 1" aria-label="Pagination">
@@ -484,7 +501,7 @@
             <div class="row mb-4">
               <div class="col-12">
                   <h4 class="fw-bold text-dark mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i> Real-time Analytics</h4>
-                  <p class="text-muted small m-0">Data shown below is dynamically based on your current search and filters.</p>
+                  <p class="text-muted small m-0">Data shown below is dynamically based on your current search and filters. Data is accurately scoped to Main Contracts only.</p>
               </div>
             </div>
 
@@ -530,14 +547,32 @@
             <div class="row g-4">
                 <div class="col-md-4">
                     <div class="search-section h-100">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Contract Status Breakdown</h6>
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Main Contract Status Breakdown</h6>
                         <div class="chart-container">
                             <canvas id="statusChart"></canvas>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-8">
+                <div class="col-md-4">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Augmentation Status Breakdown</h6>
+                        <div class="chart-container">
+                            <canvas id="augStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="search-section h-100">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Total Headcount by Kind of Service</h6>
+                        <div class="chart-container">
+                            <canvas id="hcServiceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
                     <div class="search-section h-100">
                         <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">{{ isFiltered ? 'Headcount per Property' : 'Top 10 Properties by Headcount' }}</h6>
                         <div class="chart-container">
@@ -551,15 +586,6 @@
                         <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">{{ isFiltered ? 'Headcount by Agency / Provider' : 'Top 10 Agencies / Providers by Headcount' }}</h6>
                         <div class="chart-container">
                             <canvas id="hcProviderChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="search-section h-100">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Total Headcount by Kind of Service</h6>
-                        <div class="chart-container">
-                            <canvas id="hcServiceChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -614,7 +640,7 @@
         const chatBody = ref(null);
 
         const MAIN_SFC_TYPES = ['ADD LC', 'ADD LOA', 'LAC', 'LC', 'LETTER OF APPOINTMENT', 'LETTER OF EXTENSION', 'LOE', 'LOA', 'PEA'];
-        const TABS_LIST = ['Live', 'Expiring', 'Expired', 'Ongoing Augmentation', 'Done Augmentation', 'Others'];
+        const TABS_LIST = ['Live', 'Expiring', 'Expired', 'Ongoing Augmentation', 'Done Augmentation', 'On Process', 'Others'];
 
         const expandedGroups = ref(new Set());
         
@@ -648,18 +674,18 @@
             showFab.value = window.scrollY > 250;
             if (!showFab.value) {
                 showFloatingSearch.value = false;
-                isChatOpen.value = false; // Hide chat when scrolled to top
+                isChatOpen.value = false;
             }
         };
 
         const toggleFloatingSearch = () => {
             showFloatingSearch.value = !showFloatingSearch.value;
-            if (showFloatingSearch.value) isChatOpen.value = false; // Close chat if search opens
+            if (showFloatingSearch.value) isChatOpen.value = false; 
         };
 
         const toggleChat = () => {
             isChatOpen.value = !isChatOpen.value;
-            if (isChatOpen.value) showFloatingSearch.value = false; // Close search if chat opens
+            if (isChatOpen.value) showFloatingSearch.value = false;
         };
 
         const scrollToChatBottom = () => {
@@ -668,6 +694,19 @@
                     chatBody.value.scrollTop = chatBody.value.scrollHeight;
                 }
             });
+        };
+
+        const getTabCategory = (statusStr) => {
+          if (!statusStr) return 'Others';
+          const s = statusStr.trim().toLowerCase();
+          
+          if (s === 'live') return 'Live';
+          if (s === 'expiring') return 'Expiring';
+          if (s === 'expired') return 'Expired';
+          if (s === 'ongoing temporary augmentation') return 'Ongoing Augmentation';
+          if (s === 'done temporary augmentation') return 'Done Augmentation';
+          if (s.includes('onprocess') || s.includes('on process')) return 'On Process';
+          return 'Others';
         };
 
         const sendMessage = () => {
@@ -679,49 +718,59 @@
             isChatLoading.value = true;
             scrollToChatBottom();
 
+            const mainStatuses = ['Live', 'Expiring', 'Expired', 'On Process'];
+            const hcStatuses = ['Live', 'Expiring', 'Expired', 'On Process', 'Ongoing Augmentation'];
+
             let totalHeadcount = 0;
-            let statusCounts = {};      // For Status Breakdown
-            let hcByProperty = {};     // For Headcount per Property
-            let hcByProvider = {};     // For Headcount per Agency
-            let hcByService = {};      // For Headcount per Service 
-            let volByProperty = {};    // For Contract Volume per Property 
+            let actualTotalContracts = 0;
+            let statusCounts = {};      
+            let hcByProperty = {};     
+            let hcByProvider = {};     
+            let hcByService = {};      
+            let volByProperty = {};    
             let hcByPropertyAndService = {};
             let hcByProviderAndService = {};
 
             dashboardContracts.value.forEach(c => {
                 const cat = getTabCategory(c.status);
-                statusCounts[cat] = (statusCounts[cat] || 0) + 1;
+                const sfcKind = (c.kindOfSfc || '').toUpperCase().trim();
+                const isMainSFC = MAIN_SFC_TYPES.includes(sfcKind);
 
-                const prop = c.property || 'Unknown Property';
-                volByProperty[prop] = (volByProperty[prop] || 0) + 1;
-
-                const hc = parseInt(c.headcount, 10) || 0;
-                totalHeadcount += hc;
-
-                if (hc > 0) {
-                    hcByProperty[prop] = (hcByProperty[prop] || 0) + hc;
-
-                    const prov = c.supplier || 'Unknown Provider';
-                    hcByProvider[prov] = (hcByProvider[prov] || 0) + hc;
-
-                    const svc = c.kindOfService || 'Unknown Service';
-                    hcByService[svc] = (hcByService[svc] || 0) + hc;
-
-                    if (!hcByPropertyAndService[prop]) {
-                        hcByPropertyAndService[prop] = {};
+                // STRICT FILTERING PARA SA AI: Bilangin lang kapag Main Contract
+                if(isMainSFC) {
+                    if (mainStatuses.includes(cat)) {
+                        actualTotalContracts++;
+                        statusCounts[cat] = (statusCounts[cat] || 0) + 1;
                     }
-                    hcByPropertyAndService[prop][svc] = (hcByPropertyAndService[prop][svc] || 0) + hc;
 
-                    if (!hcByProviderAndService[prov]) {
-                        hcByProviderAndService[prov] = {};
+                    const prop = c.property || 'Unknown Property';
+                    volByProperty[prop] = (volByProperty[prop] || 0) + 1;
+
+                    if (hcStatuses.includes(cat)) {
+                        const hc = parseInt(c.headcount, 10) || 0;
+                        if (hc > 0) {
+                            totalHeadcount += hc;
+                            hcByProperty[prop] = (hcByProperty[prop] || 0) + hc;
+
+                            const prov = c.supplier || 'Unknown Provider';
+                            hcByProvider[prov] = (hcByProvider[prov] || 0) + hc;
+
+                            const svc = c.kindOfService || 'Unknown Service';
+                            hcByService[svc] = (hcByService[svc] || 0) + hc;
+
+                            if (!hcByPropertyAndService[prop]) hcByPropertyAndService[prop] = {};
+                            hcByPropertyAndService[prop][svc] = (hcByPropertyAndService[prop][svc] || 0) + hc;
+
+                            if (!hcByProviderAndService[prov]) hcByProviderAndService[prov] = {};
+                            hcByProviderAndService[prov][svc] = (hcByProviderAndService[prov][svc] || 0) + hc;
+                        }
                     }
-                    hcByProviderAndService[prov][svc] = (hcByProviderAndService[prov][svc] || 0) + hc;
                 }
             });
 
             const accurateAnalytics = {
                 activeTab: activeTab.value,
-                totalContractsVisible: dashboardContracts.value.length,
+                totalContractsVisible: actualTotalContracts,
                 totalHeadcountOverall: totalHeadcount,
                 activeFilters: {
                     search: searchQuery.value || 'None',
@@ -736,13 +785,20 @@
                 contractVolumePerProperty: volByProperty 
             };
 
-            const sampleContracts = filteredContracts.value.slice(0, 10).map(c => ({
-                prop: c.property, prov: c.supplier, stat: c.status, ref: c.refNum, period: `${c.startDate} to ${c.endDate}`
+            const simplifiedContracts = dashboardContracts.value.map(c => ({
+                grpId: c.contractGrpId || 'Ungrouped',
+                prop: c.property || '-',
+                ref: c.refNum || '-',
+                prov: c.supplier || '-',
+                payor: c.payor || '-',
+                period: `${c.startDate || ''} to ${c.endDate || ''}`,
+                status: c.status || 'Unknown',
+                hc: parseInt(c.headcount, 10) || 0
             }));
 
             const contextToSend = {
                 ANALYTICS_DATA: accurateAnalytics,
-                SAMPLE_DATA: sampleContracts
+                CONTRACT_LIST: simplifiedContracts 
             };
 
             google.script.run
@@ -794,18 +850,6 @@
           const props = contracts.value.map(c => c.property).filter(p => p);
           return [...new Set(props)].sort();
         });
-
-        const getTabCategory = (statusStr) => {
-          if (!statusStr) return 'Others';
-          const s = statusStr.trim().toLowerCase();
-          
-          if (s === 'live') return 'Live';
-          if (s === 'expiring') return 'Expiring';
-          if (s === 'expired') return 'Expired';
-          if (s === 'ongoing temporary augmentation') return 'Ongoing Augmentation';
-          if (s === 'done temporary augmentation') return 'Done Augmentation';
-          return 'Others';
-        };
 
         const getTabCount = (tabName) => {
           let baseFilter = contracts.value;
@@ -941,7 +985,7 @@
           const s = status.toLowerCase();
           if (s.includes('live') || s.includes('done temporary augmentation')) return 'badge-live';
           if (s.includes('expiring')) return 'badge-expiring';
-          if (s.includes('ongoing temporary augmentation')) return 'badge-ongoing';
+          if (s.includes('ongoing temporary augmentation') || s.includes('onprocess') || s.includes('on process')) return 'badge-ongoing';
           if (s.includes('expired') || s.includes('disapproved')) return 'badge-expired';
           return 'badge-neutral';
         };
@@ -951,7 +995,7 @@
         const toggleAnalyticsModal = () => {
             showAnalyticsModal.value = !showAnalyticsModal.value;
             if (showAnalyticsModal.value) {
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                document.body.style.overflow = 'hidden'; 
                 nextTick(() => { renderCharts(); });
             } else {
                 document.body.style.overflow = '';
@@ -959,50 +1003,71 @@
         };
 
         const renderCharts = () => {
-            const statusCounts = {};
+            const mainStatuses = ['Live', 'Expiring', 'Expired', 'On Process'];
+            const hcStatuses = ['Live', 'Expiring', 'Expired', 'On Process', 'Ongoing Augmentation'];
+            const augStatuses = ['Ongoing Augmentation', 'Done Augmentation'];
+
+            const mainStatusCounts = {};
+            const augStatusCounts = {};
             const hcProp = {};
             const hcProv = {};
             const hcSvc = {};
             const volProp = {};
 
             totalHeadcountSum.value = 0;
+            let actualTotalContracts = 0;
             const propsSet = new Set();
             const provsSet = new Set();
 
             dashboardContracts.value.forEach(c => {
                 const cat = getTabCategory(c.status);
-                statusCounts[cat] = (statusCounts[cat] || 0) + 1;
+                const sfcKind = (c.kindOfSfc || '').toUpperCase().trim();
+                const isMainSFC = MAIN_SFC_TYPES.includes(sfcKind);
 
-                const prop = c.property || 'Unknown Property';
-                volProp[prop] = (volProp[prop] || 0) + 1;
-
-                const hc = parseInt(c.headcount, 10) || 0;
-                
-                if (hc > 0) {
-                    totalHeadcountSum.value += hc; 
+                if(isMainSFC) {
                     
-                    hcProp[prop] = (hcProp[prop] || 0) + hc;
-                    const prov = c.supplier || 'Unknown Provider';
-                    hcProv[prov] = (hcProv[prov] || 0) + hc;
-                    const svc = c.kindOfService || 'Unknown Service';
-                    hcSvc[svc] = (hcSvc[svc] || 0) + hc;
-                }
+                    if (mainStatuses.includes(cat)) {
+                        actualTotalContracts++;
+                        mainStatusCounts[cat] = (mainStatusCounts[cat] || 0) + 1;
+                    }
 
-                if (c.property) propsSet.add(c.property.trim());
-                if (c.supplier) provsSet.add(c.supplier.trim());
+                    if (augStatuses.includes(cat)) {
+                        augStatusCounts[cat] = (augStatusCounts[cat] || 0) + 1;
+                    }
+
+                    if (mainStatuses.includes(cat) || augStatuses.includes(cat)) {
+                        const prop = c.property || 'Unknown Property';
+                        volProp[prop] = (volProp[prop] || 0) + 1;
+                        if (c.property) propsSet.add(c.property.trim());
+                        if (c.supplier) provsSet.add(c.supplier.trim());
+                    }
+
+                    if (hcStatuses.includes(cat)) {
+                        const hc = parseInt(c.headcount, 10) || 0;
+                        if (hc > 0) {
+                            totalHeadcountSum.value += hc; 
+                            const prop = c.property || 'Unknown Property';
+                            hcProp[prop] = (hcProp[prop] || 0) + hc;
+                            const prov = c.supplier || 'Unknown Provider';
+                            hcProv[prov] = (hcProv[prov] || 0) + hc;
+                            const svc = c.kindOfService || 'Unknown Service';
+                            hcSvc[svc] = (hcSvc[svc] || 0) + hc;
+                        }
+                    }
+                }
             });
 
-            totalContractsCount.value = dashboardContracts.value.length;
+            totalContractsCount.value = actualTotalContracts;
             listedPropertiesCount.value = propsSet.size;
             activeProvidersCount.value = provsSet.size;
 
             const statusColorMap = {
-                'Live': '#34c38f',                  // Green
-                'Expiring': '#f1b44c',              // Orange
-                'Expired': '#f46a6a',               // Red
-                'Ongoing Augmentation': '#556ee6',  // Blue
-                'Done Augmentation': '#20c997',     // Teal
-                'Others': '#74788d'                 // Gray
+                'Live': '#34c38f',                  
+                'Expiring': '#f1b44c',              
+                'Expired': '#f46a6a',               
+                'Ongoing Augmentation': '#556ee6',  
+                'Done Augmentation': '#20c997',     
+                'On Process': '#50a5f1'
             };
 
             const buildChart = (id, type, labels, data, colorsSet, isHorizontal = false) => {
@@ -1025,14 +1090,13 @@
                         maintainAspectRatio: false,
                         indexAxis: isHorizontal ? 'y' : 'x',
                         plugins: { 
-                            legend: { display: type === 'doughnut' || type === 'pie', position: 'right' },
+                            legend: { display: type === 'doughnut' || type === 'pie', position: 'bottom' },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
                                         let label = context.label || '';
                                         if (label) { label += ': '; }
                                         let value = context.raw;
-                                        
                                         let dataset = context.chart.data.datasets[context.datasetIndex];
                                         let total = dataset.data.reduce((acc, val) => acc + val, 0);
                                         let percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
@@ -1084,11 +1148,15 @@
                 });
             };
 
-            const statusLabels = Object.keys(statusCounts);
-            const statusData = Object.values(statusCounts);
+            const statusLabels = Object.keys(mainStatusCounts);
+            const statusData = Object.values(mainStatusCounts);
             const statusColors = statusLabels.map(label => statusColorMap[label] || '#74788d');
-            
             buildChart('statusChart', 'doughnut', statusLabels, statusData, statusColors);
+
+            const augLabels = Object.keys(augStatusCounts);
+            const augData = Object.values(augStatusCounts);
+            const augColors = augLabels.map(label => statusColorMap[label] || '#74788d');
+            buildChart('augStatusChart', 'doughnut', augLabels, augData, augColors);
 
             const sliceAmount = isFiltered.value ? undefined : 10;
             const sliceAmountVol = isFiltered.value ? undefined : 15;
